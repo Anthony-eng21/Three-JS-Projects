@@ -1,0 +1,20 @@
+/* not enough but pretty good
+* {
+    margin: 0;
+    padding: 0;
+} */
+
+/*Remove scroll cant go over the limit of our canvas experience*/
+html,
+body {
+    overflow: hidden;
+}
+
+/*remove extra marg and pad*/
+.webgl {
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+
