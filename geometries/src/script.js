@@ -29,7 +29,7 @@ const geometry = new THREE.BufferGeometry(); //intitalize an empty buffergeo
  * 
  */
 
-const count = 500; //500 triangles
+const count = 500; 
 const positionsArray = new Float32Array(count * 3 * 3) // each triangle is composed of three verteces and each vertex is composed of three values (triangle verteces, value of each vertex per triangle )
 
 // Fill the positionsArray with random values for the triangles
