@@ -45,7 +45,7 @@ const parameters = {
   },
 };
 
-const gui = new dat.GUI(); //adds empty panel
+const gui = new dat.GUI(); //initialize lil.GUI() instance assign to gui
 
 // Added color tweak
 /**
