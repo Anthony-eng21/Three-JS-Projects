@@ -4,6 +4,33 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 THREE.ColorManagement.enabled = false;
 
 /**
+ * Textures
+ */
+
+const textureLoader = new THREE.TextureLoader();
+
+const doorColorTexture = textureLoader.load("/textures/door/color.jpg");
+const doorAlphaTexture = textureLoader.load("/textures/door/alpha.jpg");
+const doorAmbientOcclusionTexture = textureLoader.load(
+  "/textures/door/ambientOcclusion.jpg"
+);
+const doorHeightTexture = textureLoader.load("/textures/door/height.jpg");
+const doorNormalTexture = textureLoader.load("/textures/door/normal.jpg");
+const doorMetalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
+const doorRoughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
+//matcaps
+// const matcapTexture = textureLoader.load("/textures/matcaps/1.png");
+// const matcapTexture = textureLoader.load('/textures/matcaps/2.png')
+// const matcapTexture = textureLoader.load('/textures/matcaps/3.png')
+// const matcapTexture = textureLoader.load('/textures/matcaps/4.png')
+// const matcapTexture = textureLoader.load('/textures/matcaps/5.png')
+// const matcapTexture = textureLoader.load('/textures/matcaps/6.png')
+// const matcapTexture = textureLoader.load('/textures/matcaps/7.png')
+const matcapTexture = textureLoader.load('/textures/matcaps/8.png')
+//gradients
+const gradientTexture = textureLoader.load("/textures/gradients/3.jpg");
+
+/**
  * Base
  */
 // Canvas
@@ -11,6 +38,100 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+
+/**
+ * 3D Objects
+ */
+
+/**INST.BASICMATERIAL
+const material = new THREE.MeshBasicMaterial(/*{ map: doorColorTexture }**\);
+
+//ADDITIONAL mutable properties of the MeshBasicMaterial class (AS material)
+
+//MAP property applys a texture on the surface of the geometry
+// material.map = doorColorTexture
+
+//WIREFRAME property how the triangles that compose your geometry with a thin line
+//of 1px regardless of the distance of the camera
+// material.wireframe = true; //we know this one lol
+
+//Color
+// The color property will apply a uniform color on the surface of the geometry.
+// always instanciate this THREE Color class
+// material.color = new THREE.Color("grey");
+// Combining color and map: (texture) will tint the texture with the color
+
+//Opacity
+// set the transparent property to true to inform
+// Three.js that this material now supports transparency
+// material.transparent = true;
+// material.opacity = 0.5;
+
+//AlphaMap 
+// Now that the transparency is working, we can use the 
+// alphaMap property to control the transparency with a texture
+// material.transparent = true;
+// material.alphaMap = doorAlphaTexture;
+
+//Side
+// The side property lets you decide which side of a face is visible.
+// By default, the front side is visible (THREE.FrontSide), 
+// but you can show the backside instead (THREE.BackSide) or both (THREE.DoubleSide):
+// material.side = THREE.DoubleSide
+
+//objects with a SHARED MATERIAL
+*/
+
+/**INST. MeshNormalMaterial
+ * 
+//The MeshNormalMaterial displays a nice purple, blueish, greenish color
+// that looks like the normal texture we saw in the Textures lessons.
+// That is no coincidence because both are related to what we call normals
+// Normals are information encoded in each vertex that contains the direction of the outside of the face.
+// If you displayed those normals as arrows, you would get straight lines coming out of each vertex that composes your geometry.
+
+const material = new THREE.MeshNormalMaterial();
+material.side = THREE.DoubleSide;
+//flatShading will flatten the faces, meaning that the normals won't be interpolated between the vertices.
+// Laymans:(shader wont combine pretty much on the verteces)
+material.flatShading = true;
+*/
+
+/**INST. MeshMatcapMaterial
+ * 
+// MeshMatcapMaterial is a fantastic material because of how great it can look while being very performant.
+// For it to work, the MeshMatcapMaterial needs a reference texture that looks like a sphere.
+const material = new THREE.MeshMatcapMaterial();
+material.side = THREE.DoubleSide;
+material.flatShading = true;
+
+//matcap: The material will then pick colors on the texture according to the normal orientation relative to the camera.
+// To set that reference matcap texture, use the matcap property:
+// The meshes will appear illuminated, but it's just a texture that looks like it.
+// The only problem is that the illusion is the same regardless of the camera orientation.
+// Also, you cannot update the lights because there are none.
+material.matcap = matcapTexture;
+*/
+
+/**Inst. MeshDepthMaterial
+ * 
+ */
+//The MeshDepthMaterial will simply color the geometry in white if it's close to the camera's near value
+// and in black if it's close to the far value of the camera:
+const material = new THREE.MeshDepthMaterial();
+
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material);
+sphere.position.x = -1.5; //moved her
+
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+
+const torus = new THREE.Mesh(
+  new THREE.TorusGeometry(0.4, 0.2, 16, 32),
+  material
+  );
+torus.position.x = 1.5; //moved her
+
+scene.add(sphere, plane, torus); //add multiple 3d objects like this
 
 /**
  * Sizes
@@ -69,7 +190,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const clock = new THREE.Clock();
 
 const tick = () => {
+  //how many seconds spent since last refresh (how we can keep track of our animations)
   const elapsedTime = clock.getElapsedTime();
+
+  //Update objects
+
+  sphere.rotation.y = 0.1 * elapsedTime;
+  plane.rotation.y = 0.1 * elapsedTime;
+  torus.rotation.y = 0.1 * elapsedTime;
+
+  sphere.rotation.x = 0.15 * elapsedTime;
+  plane.rotation.x = 0.15 * elapsedTime;
+  torus.rotation.x = 0.15 * elapsedTime;
 
   // Update controls
   controls.update();
