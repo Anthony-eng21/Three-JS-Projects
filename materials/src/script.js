@@ -26,9 +26,9 @@ const doorRoughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
 // const matcapTexture = textureLoader.load('/textures/matcaps/5.png')
 // const matcapTexture = textureLoader.load('/textures/matcaps/6.png')
 // const matcapTexture = textureLoader.load('/textures/matcaps/7.png')
-const matcapTexture = textureLoader.load('/textures/matcaps/8.png')
+const matcapTexture = textureLoader.load("/textures/matcaps/8.png");
 //gradients
-const gradientTexture = textureLoader.load("/textures/gradients/3.jpg");
+const gradientTexture = textureLoader.load("/textures/gradients/5.jpg");
 
 /**
  * Base
@@ -38,10 +38,6 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
-
-/**
- * 3D Objects
- */
 
 /**INST.BASICMATERIAL
 const material = new THREE.MeshBasicMaterial(/*{ map: doorColorTexture }**\);
@@ -114,11 +110,67 @@ material.matcap = matcapTexture;
 */
 
 /**Inst. MeshDepthMaterial
- * 
- */
+ *
 //The MeshDepthMaterial will simply color the geometry in white if it's close to the camera's near value
 // and in black if it's close to the far value of the camera:
-const material = new THREE.MeshDepthMaterial();
+// You can use this material for special effects where you need to know how far the pixel is from the camera.
+const material = new THREE.MeshBasicMaterial();
+material.side = THREE.DoubleSide;
+*/
+
+/**inst MeshLambertMaterial
+ * MeshLambertMaterial supports the same properties as the MeshBasicMaterial
+ * but also some properties related to lights.
+ * most performant material that uses lights
+ * Unfortunately, the parameters aren't convenient,
+ * and you can see strange patterns
+const material = new THREE.MeshLambertMaterial();
+material.side = THREE.DoubleSide;
+*/
+
+/**Inst MeshPhongMaterial 
+ * 
+//The MeshPhongMaterial is very similar to the
+// MeshLambertMaterial, but the strange patterns are less visible,
+// and you can also see the light reflection on the surface of the geometry:
+const material = new THREE.MeshPhongMaterial();
+//You can control the light reflection with the shininess property.
+// The higher the value, the shinier the surface.
+// You can also change the color of the reflection by using the specular property
+// The light reflection will have a blue-ish color.
+material.shininess = 100;
+material.specular = new THREE.Color(0x1188ff);
+*/
+
+/**Inst MeshToonMaterial 
+ * 
+//The MeshToonMaterial is similar to the MeshLambertMaterial
+// in terms of properties but with a cartoonish style:
+// By default, you only get a two parts coloration (one for the shadow and one for the light).
+const material = new THREE.MeshToonMaterial();
+material.side = THREE.DoubleSide
+//to add more steps to the coloration, you can use
+// the gradientMap property and use the gradientTexture
+material.gradientMap = gradientTexture; //this alone does nothing due to mpmapping and the textures pixel size
+//added code to make this work
+gradientTexture.minFilter = THREE.NearestFilter; //How the Texture is sampled when a texel covers less than one pixel.
+gradientTexture.magFilter = THREE.NearestFilter; //How the Texture is sampled when a texel covers more than one pixel.
+//Using THREE.NearestFilter means that we are not using the mip mapping, we can deactivate it with gradientTexture.generateMipmaps = false
+gradientTexture.generateMipmaps = false;
+*/
+
+/**Inst MeshStandardMaterial
+ * 
+*/
+//A standard physically based material, using Metallic-Roughness workflow.
+const material = new THREE.MeshStandardMaterial();
+material.side = THREE.DoubleSide
+material.metalness = 0.65
+material.roughness = 0.45
+
+/**
+ * 3D Objects
+ */
 
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material);
 sphere.position.x = -1.5; //moved her
@@ -128,10 +180,27 @@ const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
 const torus = new THREE.Mesh(
   new THREE.TorusGeometry(0.4, 0.2, 16, 32),
   material
-  );
+);
 torus.position.x = 1.5; //moved her
 
 scene.add(sphere, plane, torus); //add multiple 3d objects like this
+
+/**
+ * lights
+ */
+//Inst AmbientLight class
+// The following materials need lights to be seen. Let's add two simple lights to our scene
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); //args: color of the light and
+scene.add(ambientLight);
+
+//inst PointLight class
+// Creates a new PointLight.
+const pointLight = new THREE.PointLight(0xffffff, 0.5);
+pointLight.position.x = 2;
+pointLight.position.y = 2;
+pointLight.position.z = 4;
+
+scene.add(pointLight);
 
 /**
  * Sizes
@@ -195,13 +264,13 @@ const tick = () => {
 
   //Update objects
 
-  sphere.rotation.y = 0.1 * elapsedTime;
-  plane.rotation.y = 0.1 * elapsedTime;
-  torus.rotation.y = 0.1 * elapsedTime;
+  sphere.rotation.y = (0.1 * elapsedTime);
+  plane.rotation.y = (0.1 * elapsedTime);
+  torus.rotation.y = (0.1 * elapsedTime);
 
-  sphere.rotation.x = 0.15 * elapsedTime;
-  plane.rotation.x = 0.15 * elapsedTime;
-  torus.rotation.x = 0.15 * elapsedTime;
+  sphere.rotation.x = (0.15 * elapsedTime);
+  plane.rotation.x = (0.15 * elapsedTime);
+  torus.rotation.x = (0.15 * elapsedTime);
 
   // Update controls
   controls.update();
