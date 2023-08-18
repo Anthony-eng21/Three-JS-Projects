@@ -1,12 +1,15 @@
 import * as THREE from "three";
+import * as dat from "lil-gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 THREE.ColorManagement.enabled = false;
+const gui = new dat.GUI();
 
 /**
  * Textures
  */
 
+//Class for loading a texture. Unlike other loaders, this one emits events instead of using predefined callbacks. So if you're interested in getting notified when things happen, you need to add listeners to the object i.e load()
 const textureLoader = new THREE.TextureLoader();
 
 const doorColorTexture = textureLoader.load("/textures/door/color.jpg");
@@ -160,25 +163,88 @@ gradientTexture.generateMipmaps = false;
 */
 
 /**Inst MeshStandardMaterial
- * 
-*/
+ *
 //A standard physically based material, using Metallic-Roughness workflow.
 const material = new THREE.MeshStandardMaterial();
+material.side = THREE.DoubleSide;
+// material.metalness = 0.65;
+// material.roughness = 0.45;
+
+// material.flatShading = true;
+
+//The map property allows you to apply a simple texture.
+material.map = doorColorTexture;
+
+//The aoMap property (literally "ambient occlusion map") will add shadows where the texture is dark.
+// Add the aoMap using the doorAmbientOcclusionTexture texture and control the intensity using the aoMapIntensity property
+// The crevices should look darker, which creates contrast and adds dimension.
+material.aoMap = doorAmbientOcclusionTexture;
+material.aoMapIntensity = 1;
+
+//The displacementMap property will move the vertices to create true relief:
+// Long explanation: The displacement map affects the position of the mesh's vertices. Unlike other maps which only affect the
+// light and shade of the material the displaced vertices can cast shadows, block other objects, and otherwise act as real geometry.
+// The displacement texture is an image where the value of each pixel (white being the highest) is mapped against, and repositions, the vertices of the mesh.
+material.displacementMap = doorHeightTexture;
+//insider: It should look terrible. That is due to the lack of vertices on our geometries (we need more subdivisions) and the displacement being way too strong:
+// displacementScale: How much the displacement map affects the mesh (where black is no displacement, and white is maximum displacement). Without a displacement map set, this value is not applied. Default is 1.
+material.displacementScale = 0.05;
+
+//Instead of specifying uniform metalness and roughness for the whole geometry, we can use metalnessMap and roughnessMap:
+material.roughnessMap = doorRoughnessTexture; //The green channel of this texture is used to alter the roughness of the material.
+material.metalnessMap = doorMetalnessTexture; //The blue channel of this texture is used to alter the metalness of the material.
+
+//The normalMap will fake the normal orientation and add details on the surface regardless of the subdivision:
+material.normalMap = doorNormalTexture;
+
+//You can change the normal intensity with the normalScale property. Be careful, it's a Vector2:
+material.normalScale.set(0.5, 0.5);
+
+material.transparent = true;
+material.alphaMap = doorAlphaTexture;
+*/
+
+// Instantiate the CubeTextureLoader before instantiating the material
+const cubeTextureLoader = new THREE.CubeTextureLoader()
+
+// Cube environment maps are 6 images with each one corresponding to a side of the environment.
+// To load a cube texture, you must use the CubeTextureLoader instead of the TextureLoader.
+// call its load(...) method but use an array of paths instead of one path:
+const environmentMapTexture = cubeTextureLoader.load([
+    '/textures/environmentMaps/3/px.jpg',
+    '/textures/environmentMaps/3/nx.jpg',
+    '/textures/environmentMaps/3/py.jpg',
+    '/textures/environmentMaps/3/ny.jpg',
+    '/textures/environmentMaps/3/pz.jpg',
+    '/textures/environmentMaps/3/nz.jpg'
+])
+
+const material = new THREE.MeshStandardMaterial();
+material.metalness = 0.7;
+material.roughness = 0.2;
 material.side = THREE.DoubleSide
-material.metalness = 0.65
-material.roughness = 0.45
+//To add the environment map to our material, we must use the envMap property. Three.js only supports cube environment maps.
+//You can now use the environmentMapTexture in the envMap property of your material:
+material.envMap = environmentMapTexture;
+
+
+/**
+ * debug ui
+ */
+gui.add(material, "metalness").min(0).max(1).step(0.0001);
+gui.add(material, "roughness").min(0).max(1).step(0.0001);
 
 /**
  * 3D Objects
  */
 
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material);
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
 sphere.position.x = -1.5; //moved her
 
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 100, 100), material);
 
 const torus = new THREE.Mesh(
-  new THREE.TorusGeometry(0.4, 0.2, 16, 32),
+  new THREE.TorusGeometry(0.3, 0.2, 64, 128),
   material
 );
 torus.position.x = 1.5; //moved her
@@ -190,7 +256,7 @@ scene.add(sphere, plane, torus); //add multiple 3d objects like this
  */
 //Inst AmbientLight class
 // The following materials need lights to be seen. Let's add two simple lights to our scene
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); //args: color of the light and
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); //args: color of the light and the intensity of the light
 scene.add(ambientLight);
 
 //inst PointLight class
@@ -264,13 +330,13 @@ const tick = () => {
 
   //Update objects
 
-  sphere.rotation.y = (0.1 * elapsedTime);
-  plane.rotation.y = (0.1 * elapsedTime);
-  torus.rotation.y = (0.1 * elapsedTime);
+  sphere.rotation.y = 0.1 * elapsedTime;
+  plane.rotation.y = 0.1 * elapsedTime;
+  torus.rotation.y = 0.1 * elapsedTime;
 
-  sphere.rotation.x = (0.15 * elapsedTime);
-  plane.rotation.x = (0.15 * elapsedTime);
-  torus.rotation.x = (0.15 * elapsedTime);
+  sphere.rotation.x = 0.15 * elapsedTime;
+  plane.rotation.x = 0.15 * elapsedTime;
+  torus.rotation.x = 0.15 * elapsedTime;
 
   // Update controls
   controls.update();
