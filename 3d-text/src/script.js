@@ -1,9 +1,12 @@
 import * as THREE from "three";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+//loading the font le wrongish way
+// import typeFaceFont from "three/examples/fonts/helvetiker_regular.typeface.json"
 import * as dat from "lil-gui";
 
 THREE.ColorManagement.enabled = false;
-
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 /**
  * Base
  */
@@ -21,6 +24,38 @@ const scene = new THREE.Scene();
  */
 const textureLoader = new THREE.TextureLoader();
 
+/**Fonts
+ *
+ */
+const fontLoader = new FontLoader();
+
+fontLoader.load(
+  "/fonts/helvetiker_regular.typeface.json",
+  //success fn() kinda like a promise lol
+  (font) => {
+    //instanciate the TextGeometry class from THREE
+    /**
+     *@param text — The text that needs to be shown.
+      @param parameters — Object that can contain the following parameters.
+     */
+    const textGeometry = new TextGeometry("McLovin", {
+      font: font, // an instance of THREE.Font
+      size: 0.5, // Float. Size of the text. Default is 100.
+      height: 0.2, // Float. Thickness to extrude text. Default is 50.
+      curveSegments: 12, // Integer. Number of points on the curves. Default is 12
+      bevelEnabled: true, // Boolean. Turn on bevel. Default is False.
+      bevelThickness: 0.03, // bevelThickness — Float. How deep into text bevel goes. Default is 10
+      bevelSize: 0.02, // Float. How far from text outline is bevel. Default is 8.
+      bevelOffset: 0, //  Float. How far from text outline bevel starts. Default is 0.
+      bevelSegments: 5, //  Integer. Number of bevel segments. Default is 3.
+    });
+
+    const textMaterial = new THREE.MeshNormalMaterial();
+    const text = new THREE.Mesh(textGeometry, textMaterial);
+    scene.add(text);
+  }
+);
+
 /**
  * Object
  */
@@ -29,7 +64,8 @@ const cube = new THREE.Mesh(
   new THREE.MeshBasicMaterial()
 );
 
-scene.add(cube);
+// cube.position.x = -2
+// scene.add(cube);
 
 /**
  * Sizes
@@ -64,7 +100,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.x = 1;
-camera.position.y = 1;
+camera.position.y = 2;
 camera.position.z = 2;
 scene.add(camera);
 
