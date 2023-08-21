@@ -28,6 +28,8 @@ const matcapTexture = textureLoader.load("/textures/matcaps/3.png");
 const matcapNormalTexture = textureLoader.load("/textures/matcaps/8.png");
 const textMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
 
+//instanciate donuts arrray to push objects into 
+const donuts = [];
 /**Fonts
  *
  */
@@ -91,10 +93,11 @@ fontLoader.load(
 
       // Add randomness to the rotation. No need to rotate all 3 axes, and because the donut is symmetric, half of a revolution is enough:
       donut.rotation.x = Math.random() * Math.PI;
-      donut.rotation.y = Math.random() * Math.PI;
+      donut.rotation.y = Math.random() * Math.PI * 2;
       // The donuts should have rotate in all directions. Finally, we can add randomness to the scale. Be careful, though; we need to use the same value for all 3 axes (x, y, z):
       const scale = Math.random();
       donut.scale.set(scale, scale, scale); //all 3 axes (x, y, z)
+      donuts.push(donut); //keeping reference to each object we want to animate below on our tick()
       scene.add(donut);
     }
     //
@@ -177,6 +180,10 @@ const tick = () => {
   const angle = elapsedTime * 0.2; // Adjust the speed of rotation
   camera.position.x = radius * Math.cos(angle);
   camera.position.z = radius * Math.sin(angle);
+
+  donuts.forEach((donut) => {
+    donut.rotation.x = elapsedTime * 0.5
+  })
 
   // Look at the center of the scene
   camera.lookAt(scene.position);
