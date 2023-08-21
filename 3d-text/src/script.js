@@ -28,7 +28,7 @@ const matcapTexture = textureLoader.load("/textures/matcaps/3.png");
 const matcapNormalTexture = textureLoader.load("/textures/matcaps/8.png");
 const textMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
 
-//instanciate donuts arrray to push objects into 
+//instanciate donuts arrray to push objects into
 const donuts = [];
 /**Fonts
  *
@@ -44,7 +44,7 @@ fontLoader.load(
      *@param text — The text that needs to be shown.
       @param parameters — Object that can contain the following parameters.
      */
-    const textGeometry = new TextGeometry('PartyOn', {
+    const textGeometry = new TextGeometry("PartyOn", {
       font: font, // an instance of THREE.Font
       size: 0.5, // Float. Size of the text. Default is 100.
       height: 0.2, // Float. Thickness to extrude text. Default is 50.
@@ -68,7 +68,7 @@ fontLoader.load(
 
     textGeometry.computeBoundingBox();
 
-    textGeometry.translate-(2, 0, 0)
+    textGeometry.translate - (2, 0, 0);
     /**textGeometry.translate(
       -textGeometry.boundingBox.max.x * 0.05,
       -textGeometry.boundingBox.max.y * 0.05,
@@ -182,8 +182,8 @@ const tick = () => {
   camera.position.z = radius * Math.sin(angle);
 
   donuts.forEach((donut) => {
-    donut.rotation.x = elapsedTime * 0.5
-  })
+    donut.rotation.x = elapsedTime * Math.PI;
+  });
 
   // Look at the center of the scene
   camera.lookAt(scene.position);
