@@ -10,8 +10,8 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI();
+// Debug GUI
+// const gui = new dat.GUI();
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -23,6 +23,10 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+//loading our material for our textGeo
+const matcapTexture = textureLoader.load("/textures/matcaps/3.png");
+const matcapNormalTexture = textureLoader.load("/textures/matcaps/8.png");
+const textMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
 
 /**Fonts
  *
@@ -31,14 +35,14 @@ const fontLoader = new FontLoader();
 
 fontLoader.load(
   "/fonts/helvetiker_regular.typeface.json",
-  //success fn() kinda like a promise lol
+  //success fn() when this ajax call is fulfilled
   (font) => {
     //instanciate the TextGeometry class from THREE
     /**
      *@param text — The text that needs to be shown.
       @param parameters — Object that can contain the following parameters.
      */
-    const textGeometry = new TextGeometry("McLovin", {
+    const textGeometry = new TextGeometry('PartyOn', {
       font: font, // an instance of THREE.Font
       size: 0.5, // Float. Size of the text. Default is 100.
       height: 0.2, // Float. Thickness to extrude text. Default is 50.
@@ -50,8 +54,50 @@ fontLoader.load(
       bevelSegments: 5, //  Integer. Number of bevel segments. Default is 3.
     });
 
-    const textMaterial = new THREE.MeshNormalMaterial();
     const text = new THREE.Mesh(textGeometry, textMaterial);
+
+    /**Centering the textgeometry with boundingbox
+     * we use this bounding to know the size of the geometry and recenter it
+     * we can ask Three.js to calculate this box bounding by calling computeBoundingBox() on the geometry:
+     * the translate method on our textGeometry is how we can repositon our object sorta like css with it's translate property
+     * or we can use the center method on our textgeo instance and center this geometry a lot more easily
+     * point of doing it ourselves was to learn about boundings and frustum culling.
+     */
+
+    textGeometry.computeBoundingBox();
+
+    textGeometry.translate-(2, 0, 0)
+    /**textGeometry.translate(
+      -textGeometry.boundingBox.max.x * 0.05,
+      -textGeometry.boundingBox.max.y * 0.05,
+      -textGeometry.boundingBox.max.z * 0.05
+    );
+
+    const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+    text.position.x = -textWidth / 2; // Move the text to the left by half of its width
+    */
+
+    textGeometry.center();
+    //donut loop
+    const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 10, 22);
+    const donutMaterial = new THREE.MeshMatcapMaterial({
+      matcap: matcapNormalTexture,
+    });
+    for (let i = 0; i <= 200; i++) {
+      const donut = new THREE.Mesh(donutGeometry, donutMaterial);
+      donut.position.x = (Math.random() - 0.5) * 10;
+      donut.position.y = (Math.random() - 0.5) * 10;
+      donut.position.z = (Math.random() - 0.5) * 10;
+
+      // Add randomness to the rotation. No need to rotate all 3 axes, and because the donut is symmetric, half of a revolution is enough:
+      donut.rotation.x = Math.random() * Math.PI;
+      donut.rotation.y = Math.random() * Math.PI;
+      // The donuts should have rotate in all directions. Finally, we can add randomness to the scale. Be careful, though; we need to use the same value for all 3 axes (x, y, z):
+      const scale = Math.random();
+      donut.scale.set(scale, scale, scale); //all 3 axes (x, y, z)
+      scene.add(donut);
+    }
+    //
     scene.add(text);
   }
 );
@@ -99,7 +145,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.x = 1;
+camera.position.x = 2;
 camera.position.y = 2;
 camera.position.z = 2;
 scene.add(camera);
@@ -125,6 +171,15 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  // Move the camera horizontally
+  const radius = 5; // Radius of the circular path
+  const angle = elapsedTime * 0.2; // Adjust the speed of rotation
+  camera.position.x = radius * Math.cos(angle);
+  camera.position.z = radius * Math.sin(angle);
+
+  // Look at the center of the scene
+  camera.lookAt(scene.position);
 
   // Update controls
   controls.update();
