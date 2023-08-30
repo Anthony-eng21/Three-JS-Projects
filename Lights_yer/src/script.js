@@ -39,9 +39,6 @@ const scene = new THREE.Scene();
  * The rays come from an infinite space and travel
  * in parallel to the infinite opposite.
  * - CODE:
- * const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.3);
- * scene.add(directionalLight);
- * directionalLight.position.set(1, 0.25, 0);
  *
  * HemisphereLight
  * The HemisphereLight is similar to the AmbientLight but with a different
@@ -50,6 +47,19 @@ const scene = new THREE.Scene();
  * @params The first parameter is the color corresponding to the sky color
  * @params the second parameter is the groundColor.
  * @params the third parameter is the intensity:
+ *
+ * PointLight
+ * The PointLight is almost like a lighter. The light source is infinitely
+ * small, and the lightspreads uniformly in every direction.
+ * @params The first parameter is the color.
+ * @params the second parameter is the intensity.
+ * By default, the light intensity doesn't fade. But you can control that fade distance 
+ * and how fast it is fading using the distance and decay properties. You can set those in the
+ * parameters of the class as the third and fourth parameters, or in the properties of the instance:
+ * @params the third parameter (distance) is the maximum range of the light. Default is 0 (no limit).
+ * @params the fourth parameter (decay)The amount the light dims along the distance of the light. Expects a Float. Default 2
+ * 
+ * 
  */
 
 //CODE:
@@ -61,6 +71,17 @@ scene.add(ambientLight);
 const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3);
 scene.add(hemisphereLight);
 
+const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.3);
+scene.add(directionalLight);
+directionalLight.position.set(1, 0.25, 0);
+
+const pointLight = new THREE.PointLight(0xff9000, 0.5, 10, 2);
+//we can move the position of the light like any other object with the set method
+/**@params instance.position.set(): x, y, z naturally */
+pointLight.position.set(1, -0.5, 1);
+scene.add(pointLight);
+
+//DEBUG UI
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
 
 /**
