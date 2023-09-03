@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper";
 import * as dat from "lil-gui";
 
 THREE.ColorManagement.enabled = false;
@@ -102,7 +103,10 @@ const scene = new THREE.Scene();
  * @params the second parameter allows us to change the size of the helper
  * To use them, simply instantiate those classes. Use the corresponding light as a parameter,
  * and add them to the scene. The second parameter enables you to change the helper's size:
- * 
+ *
+ * The RectAreaLightHelper is a little harder to use. Right now, the class isn't part of the THREE core variables.
+ * You must import it from the examples dependencies as we did with OrbitControls:
+ *
  * To assist us, we can use helpers. Only the following helpers are supported:
  * HemisphereLightHelper
  * DirectionalLightHelper
@@ -177,6 +181,10 @@ scene.add(pointLightHelper);
 
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 scene.add(spotLightHelper);
+
+//not a core THREE variable reference the dedicated documenting above.
+const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight);
+scene.add(rectAreaLightHelper);
 
 //DEBUG UI
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
