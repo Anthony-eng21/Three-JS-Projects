@@ -53,13 +53,63 @@ const scene = new THREE.Scene();
  * small, and the lightspreads uniformly in every direction.
  * @params The first parameter is the color.
  * @params the second parameter is the intensity.
- * By default, the light intensity doesn't fade. But you can control that fade distance 
+ * By default, the light intensity doesn't fade. But you can control that fade distance
  * and how fast it is fading using the distance and decay properties. You can set those in the
  * parameters of the class as the third and fourth parameters, or in the properties of the instance:
  * @params the third parameter (distance) is the maximum range of the light. Default is 0 (no limit).
  * @params the fourth parameter (decay)The amount the light dims along the distance of the light. Expects a Float. Default 2
+ *
+ * RectAreaLight
+ * this light works lik the big rectangle lights irl e.g. photo set. It's a mix between the directional and diffuse light.
+ * The RectAreaLight only works with MeshStandardMaterial and MeshPhysicalMaterial.
+ * You can then move the light and rotate it. To ease the rotation, use the lookAt(...) method:
+ * @params the first parameter is the color naturally.
+ * @params the second parameter is the intensity naturally.
+ * @params the third is the width.
+ * @params the fourth is the height
+ *
+ * SpotLight
+ * works like a flashlight. It's a cone of light starting at a point and oriented in a direction. Here the list of its parameters:
+ * Rotating our SpotLight is a little harder. The instance has a property named target, which is an Object3D. The SpotLight is always
+ * looking at that target object. But if you try to change its position, the SpotLight won't budge:
+ * adding the target (spotlight.target) to the scene will make it budge though.
+ * @params Color: naturally.
+ * @params intensity: strength of the emmitted light.
+ * @params distance: the distancce at which the intensity drops to 0.
+ * @params angle: how large is the beam.
+ * @params penumbra: how diffused is the contour of the beam.
+ * @params decay: how fast the light dims.
+ *
+ * Performance With Lighting
+ * Lights are great and can be realistic if well used. The problem is that lights can cost a lot when it comes to performance.
+ * The GPU will have to do many calculations like the distance from the face to the light, how much that face is facing the light,
+ * if the face is in the spot light cone, etc. Try to add as few lights as possible and try to use the lights that cost less.
+ *
+ * Minimal Cost classes:
+ * Ambient
+ * Hemisphere
+ *
+ * Moderate Cost classes
+ * Directional
+ * PointLight
+ *
+ * High Cost classes
+ * SpotLight
+ * RectAreaLight
+ *
+ * Helpers
+ * @params reference the light we want to correspond the light with
+ * @params the second parameter allows us to change the size of the helper
+ * To use them, simply instantiate those classes. Use the corresponding light as a parameter,
+ * and add them to the scene. The second parameter enables you to change the helper's size:
  * 
- * 
+ * To assist us, we can use helpers. Only the following helpers are supported:
+ * HemisphereLightHelper
+ * DirectionalLightHelper
+ * PointLightHelper
+ * RectAreaLightHelper
+ * SpotLightHelper
+ *
  */
 
 //CODE:
@@ -80,6 +130,53 @@ const pointLight = new THREE.PointLight(0xff9000, 0.5, 10, 2);
 /**@params instance.position.set(): x, y, z naturally */
 pointLight.position.set(1, -0.5, 1);
 scene.add(pointLight);
+
+//purple light
+const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 2, 1, 1);
+scene.add(rectAreaLight);
+
+rectAreaLight.position.set(-1.5, 0, 1.5);
+
+//A Vector3 without any parameter will have its x, y, and z to 0 (the center of the scene).
+rectAreaLight.lookAt(new THREE.Vector3());
+
+const spotLight = new THREE.SpotLight(
+  0x78ff00,
+  0.5,
+  10,
+  Math.PI * 0.1,
+  0.25,
+  1
+);
+spotLight.position.set(0, 2, 3);
+
+spotLight.target.position.x = -0.75;
+
+scene.add(spotLight);
+scene.add(spotLight.target); //refer to dedicated documents on this instance of the SpotLight class
+
+spotLight.position.set(0, 2, 3);
+scene.add(spotLight);
+console.log(spotLight.position);
+
+//Helpers
+const hemisphereLightHelper = new THREE.HemisphereLightHelper(
+  hemisphereLight,
+  0.2
+);
+scene.add(hemisphereLightHelper);
+
+const directionalLightHelper = new THREE.DirectionalLightHelper(
+  directionalLight,
+  0.2
+);
+scene.add(directionalLightHelper);
+
+const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2);
+scene.add(pointLightHelper);
+
+const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(spotLightHelper);
 
 //DEBUG UI
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
