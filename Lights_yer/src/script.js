@@ -187,7 +187,7 @@ const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight);
 scene.add(rectAreaLightHelper);
 
 //DEBUG UI
-gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
+gui.add(ambientLight, "intensity").min(0).max(0.5).step(0.001);
 
 /**
  * Objects
