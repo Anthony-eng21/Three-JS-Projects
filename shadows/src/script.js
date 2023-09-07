@@ -45,6 +45,13 @@ const scene = new THREE.Scene();
  * the shadow or where the shadow appears suddenly cropped.
  * To help us debug the camera and preview the near and far, we can use a CameraHelper with the camera used for the shadow map located in the
  * directionalLight.shadow.camera property:
+ * preview the near and far, we can use a CameraHelper class with the camera used for the shadow map located in the directionalLight.shadow.camera property:
+ * 
+ * Amplitude 
+ * With the camera helper we just added, we can see that the camera's amplitude is too large.
+ * Because we are using a DirectionalLight, Three.js is using an OrthographicCamera. If you remember
+ * from the Cameras lesson, we can control how far on each side the camera can see with the top, right,
+ * bottom, and left properties. Let's reduce those properties:
  */
 
 /**
@@ -73,10 +80,17 @@ console.log(directionalLight.shadow);
 directionalLight.shadow.mapSize.width = 1024;
 directionalLight.shadow.mapSize.height = 1024;
 
+//camera frustrum places camera visibility
+directionalLight.shadow.camera.top = 2
+directionalLight.shadow.camera.right = 2
+directionalLight.shadow.camera.bottom = -2
+directionalLight.shadow.camera.left = -2
+
 const directionalLightHelper = new THREE.CameraHelper(
   directionalLight.shadow.camera
 );
 
+//visually see the near and far of the camera. Try to find a value that fits the scene:
 scene.add(directionalLightHelper);
 
 //
@@ -85,6 +99,7 @@ scene.add(directionalLightHelper);
  */
 const material = new THREE.MeshStandardMaterial();
 material.roughness = 0.7;
+console.log(material);
 gui.add(material, "metalness").min(0).max(1).step(0.001);
 gui.add(material, "roughness").min(0).max(1).step(0.001);
 
