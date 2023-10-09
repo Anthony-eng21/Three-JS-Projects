@@ -46,8 +46,8 @@ const scene = new THREE.Scene();
  * To help us debug the camera and preview the near and far, we can use a CameraHelper with the camera used for the shadow map located in the
  * directionalLight.shadow.camera property:
  * preview the near and far, we can use a CameraHelper class with the camera used for the shadow map located in the directionalLight.shadow.camera property:
- * 
- * Amplitude 
+ *
+ * Amplitude
  * With the camera helper we just added, we can see that the camera's amplitude is too large.
  * Because we are using a DirectionalLight, Three.js is using an OrthographicCamera. If you remember
  * from the Cameras lesson, we can control how far on each side the camera can see with the top, right,
@@ -55,10 +55,29 @@ const scene = new THREE.Scene();
  */
 
 /**
- * Lights
+ * Shadow map algorithms
+ * THREE.BasicShadowMap: Very performant but lousy quality
+ * THREE.PCFShadowMap: Less performant but smoother edges
+ * THREE.PCFSoftShadowMap: Less performant but even softer edges
+ * THREE.VSMShadowMap: Less performant, more constraints, can have unexpected results
  */
-// Ambient light
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+
+/**
+ * Baking Shadows
+ * Three.js shadows can be very useful if the scene is simple, but it might otherwise become messy.
+ * A good alternative is baked shadows. We talk about baked lights in the previous lesson and it is exactly
+ * the same thing. Shadows are integrated into textures that we apply on materials. Instead of commenting all the
+ * shadows related lines of code, we can simply deactivate them in the renderer and on each light:
+ */
+
+/**
+ * Baking Shadow alternative for a more dynamic experience
+ */
+
+const textureLoadeer = new THREE.TextureLoader();
+const simpleShadow = textureLoadeer.load("/textures/simpleShadow.jpg");
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
 scene.add(ambientLight);
 
@@ -80,11 +99,13 @@ console.log(directionalLight.shadow);
 directionalLight.shadow.mapSize.width = 1024;
 directionalLight.shadow.mapSize.height = 1024;
 
-//camera frustrum places camera visibility
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
+//camera frustrum planes camera visibility
+//The smaller the values, the more precise the
+//shadow will be. But if it's too small, the shadows will just be cropped.
+directionalLight.shadow.camera.top = 2;
+directionalLight.shadow.camera.right = 2;
+directionalLight.shadow.camera.bottom = -2;
+directionalLight.shadow.camera.left = -2;
 
 const directionalLightHelper = new THREE.CameraHelper(
   directionalLight.shadow.camera
@@ -92,6 +113,54 @@ const directionalLightHelper = new THREE.CameraHelper(
 
 //visually see the near and far of the camera. Try to find a value that fits the scene:
 scene.add(directionalLightHelper);
+
+directionalLightHelper.visible = false; //hide our helper
+
+//BLUR the shadow with its' radius property
+directionalLight.shadow.radius = 10;
+
+/**
+ * spotlight
+ * improve the shadow quality using the same techniques that we used for the directional light Change the shadow.mapSize:
+ * Because we are now using a SpotLight, internally, Three.js is using a PerspectiveCamera. That means that instead of the
+ * top, right, bottom, and left properties, we must change the fov property. Try to find an angle as small as possible without having
+ * the shadows cropped:
+ */
+const spotLight = new THREE.SpotLight(0xffffff, 0.4, 10, Math.PI * 0.3);
+spotLight.castShadow = true;
+spotLight.position.set(0, 2, 2);
+scene.add(spotLight);
+scene.add(spotLight.target);
+const spotLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+scene.add(spotLightCameraHelper);
+
+spotLightCameraHelper.visible = false;
+spotLight.shadow.mapSize.width = 1024;
+spotLight.shadow.mapSize.height = 1024;
+
+spotLight.shadow.camera.fov = 30;
+
+spotLight.shadow.camera.near = 0.1;
+spotLight.shadow.camera.far = 5;
+
+/**
+ * PoinLight
+ */
+
+const pointLight = new THREE.PointLight(0xffffff, 0.3);
+pointLight.castShadow = true;
+
+pointLight.position.set(-1, 1, 0);
+scene.add(pointLight);
+
+pointLight.shadow.mapSize.width = 1024;
+pointLight.shadow.mapSize.height = 1024;
+
+pointLight.shadow.camera.near = 1;
+pointLight.shadow.camera.far = 6;
+const pointLightHelper = new THREE.CameraHelper(pointLight.shadow.camera);
+pointLightHelper.visible = false;
+scene.add(pointLightHelper);
 
 //
 /**
@@ -117,7 +186,20 @@ plane.position.y = -0.5;
 //Try to activate these on as few objects as possible:
 plane.receiveShadow = true; //shadow receiver
 
-scene.add(sphere, plane);
+//Alternative to baked shadow 
+//not so realistic but very performant shadow.
+const sphereShadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.5, 1.5),
+  new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    alphaMap: simpleShadow
+  })
+)
+sphereShadow.rotation.x = - Math.PI * 0.5; //shadows' radius
+sphereShadow.position.y = plane.position.y + 0.01; //set the shadow just above ouor plane 
+
+scene.add(sphere, sphereShadow, plane);
 
 /**
  * Sizes
@@ -172,6 +254,19 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 //First, we need to activate the shadow maps on the renderer:
 renderer.shadowMap.enabled = true;
 
+// to use one of the shaddow algos we update the enabled property to type
+//radius doesn't work with this algorithm
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+//Baked shadows now biotch
+directionalLight.castShadow = false;
+// ...
+spotLight.castShadow = false;
+// ...
+pointLight.castShadow = false;
+// ...
+renderer.shadowMap.enabled = false;
+
 /**
  * Animate
  */
@@ -179,6 +274,16 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  //updating the sphere
+  sphere.position.x = Math.cos(elapsedTime) * 1.5;
+  sphere.position.z = Math.sin(elapsedTime) * 1.5;
+  sphere.position.y = Math.abs(Math.sin(elapsedTime * 3));
+
+  //update the shadow 
+  sphereShadow.position.x = sphere.position.x;
+  sphereShadow.position.z = sphere.position.z;
+  sphereShadow.material.opacity = (1 - sphere.position.y) * 0.3;
 
   // Update controls
   controls.update();
