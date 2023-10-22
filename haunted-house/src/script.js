@@ -20,6 +20,16 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+const doorColorTexture = textureLoader.load("/textures/door/color.jpg");
+const doorAlphaTexture = textureLoader.load("/textures/door/alpha.jpg");
+const doorAmbientOcclusionTexture = textureLoader.load(
+  "/textures/door/ambientOcclusion.jpg"
+);
+const doorHeightTexture = textureLoader.load("/textures/door/height.jpg");
+const doorNormalTexture = textureLoader.load("/textures/door/normal.jpg");
+const doorMetalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
+const doorRoughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
+
 /**
  * House
  * Instead of putting every object composing that house in the scene,
@@ -58,11 +68,20 @@ floor.rotation.x = -Math.PI * 0.5;
 floor.position.y = 0;
 scene.add(floor);
 
-//door
-
+//door and added texture maps
 const door = new THREE.Mesh(
-  new THREE.PlaneGeometry(2, 2),
-  new THREE.MeshStandardMaterial({ color: "#aa7b7b" })
+  new THREE.PlaneGeometry(2, 2, 100, 100),
+  new THREE.MeshStandardMaterial({
+    map: doorColorTexture,
+    transparent: true,
+    alphaMap: doorAlphaTexture,
+    aoMap: doorAmbientOcclusionTexture,
+    displacementMap: doorHeightTexture,
+    displacementScale: 0.1,
+    normalMap: doorNormalTexture,
+    metalnessMap: doorMetalnessTexture,
+    roughnessMap: doorRoughnessTexture
+  })
 );
 
 door.position.y = 1;
@@ -91,6 +110,21 @@ bush4.position.set(-1, 0.05, 2.6);
 
 house.add(bush1, bush2, bush3, bush4);
 
+// Adding bushes alongside the house
+const bushPositions = [
+  { x: -2.2, y: 0.2, z: 0.8 }, // Left side bushes
+  { x: -2.2, y: 0.2, z: -0.8 },
+  { x: 2.2, y: 0.2, z: 0.8 }, // Right side bushes
+  { x: 2.2, y: 0.2, z: -0.8 },
+];
+
+bushPositions.forEach((pos) => {
+  const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+  bush.scale.set(0.5, 0.5, 0.5); // You can vary this to have different sizes
+  bush.position.set(pos.x, pos.y, pos.z);
+  house.add(bush);
+});
+
 //procedural Graves render
 const graves = new THREE.Group();
 scene.add(graves);
@@ -100,28 +134,57 @@ const graveMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
 
 //loop and do some mathematics to position a bunch of graves around the house.
 
-for (let i = 0; i < 75; i++) {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = 3 + Math.random() * 6;
-  const x = Math.cos(angle) * radius;
+for (let i = 0; i < 50; i++) {
+  const angle = Math.random() * Math.PI * 2; // Random angle
+  const radius = 3 + Math.random() * 6; // Random radius
+  const x = Math.cos(angle) * radius; // get the x axis using cosinus
+  const z = Math.sin(angle) * radius; // get the y axiz with sinus
+
+  //grave mesh init
+  const grave = new THREE.Mesh(graveGeometry, graveMaterial);
+
+  grave.position.set(x, 0.3, z);
+
+  //rotation
+  grave.rotation.z = (Math.random() - 0.5) * 0.4;
+  grave.rotation.y = (Math.random() - 0.5) * 0.4;
+
+  //add grave(s) to our graves group
+  graves.add(grave);
 }
 
 /**
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
+const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
 gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
 scene.add(ambientLight);
 
 // Directional light
-const moonLight = new THREE.DirectionalLight("#ffffff", 0.5);
+const moonLight = new THREE.DirectionalLight("#b9d5ff", 0.12);
 moonLight.position.set(4, 5, -2);
 gui.add(moonLight, "intensity").min(0).max(1).step(0.001);
 gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
 gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
 gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
 scene.add(moonLight);
+
+//door light
+const doorLight = new THREE.PointLight("#ff7d46", 1, 7);
+doorLight.position.set(0, 2.2, 2.7);
+house.add(doorLight);
+
+/**
+ * Fog Class
+ * The first parameter is the color
+ * the second parameter is the near (how far from the camera does the fog start),
+ * the third parameter is the far (how far from the camera will the fog be fully opaque).
+ */
+
+const fog = new THREE.Fog("#252837", 1, 15);
+//activate the fog with the scenes' fog property
+scene.fog = fog;
 
 /**
  * Sizes
@@ -170,6 +233,8 @@ controls.enableDamping = true;
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
+//change clear color of the renderer form the contrast of the gravews and we want thte fog to POP
+renderer.setClearColor("#262837");
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
