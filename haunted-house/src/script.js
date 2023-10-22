@@ -20,6 +20,8 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+
+//Door Textures
 const doorColorTexture = textureLoader.load("/textures/door/color.jpg");
 const doorAlphaTexture = textureLoader.load("/textures/door/alpha.jpg");
 const doorAmbientOcclusionTexture = textureLoader.load(
@@ -29,6 +31,16 @@ const doorHeightTexture = textureLoader.load("/textures/door/height.jpg");
 const doorNormalTexture = textureLoader.load("/textures/door/normal.jpg");
 const doorMetalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
 const doorRoughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
+
+//bricks/walls textures
+const bricksColorTexture = textureLoader.load("/textures/bricks/color.jpg");
+const bricksAmbientOcclusionTexture = textureLoader.load(
+  "/textures/bricks/ambientOcclusion.jpg"
+);
+const bricksNormalTexture = textureLoader.load("/textures/bricks/normal.jpg");
+const bricksRoughnessTexture = textureLoader.load(
+  "/textures/bricks/roughness.jpg"
+);
 
 /**
  * House
@@ -42,7 +54,12 @@ scene.add(house);
 
 const walls = new THREE.Mesh(
   new THREE.BoxGeometry(4, 2.5, 4),
-  new THREE.MeshStandardMaterial({ color: "#ac8e82" })
+  new THREE.MeshStandardMaterial({
+    map: bricksColorTexture,
+    aoMap: bricksAmbientOcclusionTexture,
+    normalMap: bricksNormalTexture,
+    roughnessMap: bricksRoughnessTexture,
+  })
 );
 
 //roof start with a cone geometry
@@ -80,7 +97,7 @@ const door = new THREE.Mesh(
     displacementScale: 0.1,
     normalMap: doorNormalTexture,
     metalnessMap: doorMetalnessTexture,
-    roughnessMap: doorRoughnessTexture
+    roughnessMap: doorRoughnessTexture,
   })
 );
 
