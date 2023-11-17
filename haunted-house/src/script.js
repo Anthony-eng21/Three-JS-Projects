@@ -42,6 +42,46 @@ const bricksRoughnessTexture = textureLoader.load(
   "/textures/bricks/roughness.jpg"
 );
 
+//floor texture
+const grassColorTexture = textureLoader.load("/textures/grass/color.jpg");
+const grassAmbientOcclusionTexture = textureLoader.load(
+  "/textures/grass/ambientOcclusion.jpg"
+);
+const grassNormalTexture = textureLoader.load("/textures/grass/normal.jpg");
+const grassRoughnessTexture = textureLoader.load(
+  "/textures/grass/roughness.jpg"
+);
+
+//the texture was too large repeat against UV
+grassColorTexture.repeat.set(8, 8);
+grassAmbientOcclusionTexture.repeat.set(8, 8);
+grassNormalTexture.repeat.set(8, 8);
+grassRoughnessTexture.repeat.set(8, 8);
+
+//change the wrapS & wrapT properties on our textures to activate our repeat wrapped horizontally and corresponds to U in UV mapping.
+grassColorTexture.wrapS = THREE.RepeatWrapping;
+grassAmbientOcclusionTexture.wrapS = THREE.RepeatWrapping;
+grassNormalTexture.wrapS = THREE.RepeatWrapping;
+grassRoughnessTexture.wrapS = THREE.RepeatWrapping;
+
+// wrapT: This defines how the Texture is wrapped vertically and corresponds to V in UV mapping.
+grassColorTexture.wrapT = THREE.RepeatWrapping;
+grassAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping;
+grassNormalTexture.wrapT = THREE.RepeatWrapping;
+grassRoughnessTexture.wrapT = THREE.RepeatWrapping;
+
+/**
+ * Ghosts
+ */
+
+const ghost1 = new THREE.PointLight("#ff00ff", 2, 3);
+scene.add(ghost1);
+const ghost2 = new THREE.PointLight("#00ffff", 2, 3);
+scene.add(ghost2);
+
+const ghost3 = new THREE.PointLight("#ffff00", 2, 3);
+scene.add(ghost3);
+
 /**
  * House
  * Instead of putting every object composing that house in the scene,
@@ -79,7 +119,12 @@ house.add(walls);
 // Floor
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: "#a9c388", side: THREE.DoubleSide })
+  new THREE.MeshStandardMaterial({
+    map: grassColorTexture,
+    aoMap: grassAmbientOcclusionTexture,
+    normalMap: grassNormalTexture,
+    roughness: grassRoughnessTexture,
+  })
 );
 floor.rotation.x = -Math.PI * 0.5;
 floor.position.y = 0;
@@ -133,6 +178,9 @@ const bushPositions = [
   { x: -2.2, y: 0.2, z: -0.8 },
   { x: 2.2, y: 0.2, z: 0.8 }, // Right side bushes
   { x: 2.2, y: 0.2, z: -0.8 },
+  // Back side bushes
+  { x: -1.0, y: 0.2, z: -2.2 },
+  { x: 1.0, y: 0.2, z: -2.2 },
 ];
 
 bushPositions.forEach((pos) => {
@@ -140,6 +188,7 @@ bushPositions.forEach((pos) => {
   bush.scale.set(0.5, 0.5, 0.5); // You can vary this to have different sizes
   bush.position.set(pos.x, pos.y, pos.z);
   house.add(bush);
+  bush.castShadow = true;
 });
 
 //procedural Graves render
@@ -165,7 +214,7 @@ for (let i = 0; i < 50; i++) {
   //rotation
   grave.rotation.z = (Math.random() - 0.5) * 0.4;
   grave.rotation.y = (Math.random() - 0.5) * 0.4;
-
+  grave.castShadow = true;
   //add grave(s) to our graves group
   graves.add(grave);
 }
@@ -199,7 +248,7 @@ house.add(doorLight);
  * the third parameter is the far (how far from the camera will the fog be fully opaque).
  */
 
-const fog = new THREE.Fog("#252837", 1, 15);
+const fog = new THREE.Fog("#ccc", 1, 15);
 //activate the fog with the scenes' fog property
 scene.fog = fog;
 
@@ -251,10 +300,48 @@ const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
 //change clear color of the renderer form the contrast of the gravews and we want thte fog to POP
-renderer.setClearColor("#262837");
+renderer.setClearColor("#979392");
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+/**
+ * shadowss
+ */
+
+moonLight.castShadow = true;
+doorLight.castShadow = true;
+ghost1.castShadow = true;
+ghost2.castShadow = true;
+ghost3.castShadow = true;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+walls.castShadow = true;
+bush1.castShadow = true;
+bush2.castShadow = true;
+bush3.castShadow = true;
+bush4.castShadow = true;
+
+floor.receiveShadow = true;
+
+// shadow optimazation
+
+doorLight.shadow.mapSize.width = 256
+doorLight.shadow.mapSize.height = 256
+doorLight.shadow.camera.far = 7;
+
+ghost1.shadow.mapSize.width = 256;
+ghost1.shadow.mapSize.height = 256
+ghost1.shadow.camera.far = 7;
+
+ghost2.shadow.mapSize.width = 256;
+ghost2.shadow.mapSize.height = 256
+ghost2.shadow.camera.far = 7;
+
+ghost3.shadow.mapSize.width = 256;
+ghost3.shadow.mapSize.height = 256
+ghost3.shadow.camera.far = 7;
 
 /**
  * Animate
@@ -263,6 +350,26 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  //animate ghosts
+
+  const ghost1Angle = elapsedTime * 0.5;
+  ghost1.position.x = Math.cos(ghost1Angle) * 4;
+  ghost1.position.z = Math.sin(ghost1Angle) * 4;
+  ghost1.position.y = Math.sin(elapsedTime * 3);
+
+  const ghost2Angle = -elapsedTime * 0.32;
+  ghost2.position.x = Math.cos(ghost2Angle) * 5;
+  ghost2.position.z = Math.sin(ghost2Angle) * 5;
+  ghost2.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5);
+
+  const ghost3Angle = -elapsedTime * 0.18;
+  ghost3.position.x =
+    Math.cos(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.32));
+  ghost3.position.z = Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5));
+  ghost3.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5);
+
+  // console.log(elapsedTime);
 
   // Update controls
   controls.update();
