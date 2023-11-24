@@ -26,7 +26,7 @@ const particleTexture = textureLoader.load("/textures/particles/2.png");
  */
 
 const particlesGeometry = new THREE.BufferGeometry();
-const count = 20000;
+const count = 50000;
 
 const positions = new Float32Array(count * 3); // * by 3 each position is composed of 3 values (x, y, z)
 
@@ -47,16 +47,17 @@ particlesGeometry.setAttribute(
   new THREE.BufferAttribute(positions, 3)
 );
 
-particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3)); // three to update the x y and z vertices on this attribute
 
 const particleMaterials = new THREE.PointsMaterial({
   size: 0.1,
+  sizeAttenuation: true,
 });
 
 // particleMaterials.color = new THREE.Color("#ff88cc"); singular color
 
 // this is how we change the values for our color buffer attrible on our individual materials to change the color of each individual mesh elelments
-particleMaterials.vertexColors = true; 
+particleMaterials.vertexColors = true;
 
 particleMaterials.transparent = true;
 particleMaterials.alphaMap = particleTexture;
@@ -148,11 +149,30 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * Animate
+ * Animating each point separately instead of all them in the same way pretty dope way
+ * of doing this. We pretty mukkch update the vertices of each point so for 1 their x y z verts
+ * to do this we have to update the right part in the position attribute becasys akk tge verts are
+ * stored in a sing one dimensional array where each verticle is stored like this [x, y, z, etc...]
+ * for each vertex jof our point geometries
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  // i3 variable inside that goes 3 by 3 simply by multiplying i by 3.
+  // The easiest way to simulate waves movement is to use a simple sinus. First,
+  // we are going to update all vertices to go up and down on the same frequency.
+  // The y coordinate can be access in the array at the index i3 + 1:
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    // particlesGeometry.attributes.position.array[i3 + 1] = Math.sin(elapsedTime); all for the i3 + 1 === y vertices
+    const x = particlesGeometry.attributes.position.array[i3]; //x position prease 0 iondex is x becasue x => '0' etc...
+    particlesGeometry.attributes.position.array[i3 + 1] = Math.sin(
+      elapsedTime + x
+    );
+  }
+  particlesGeometry.attributes.position.needsUpdate = true;
 
   // Update controls
   controls.update();
