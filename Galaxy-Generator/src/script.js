@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
+import { randInt } from "three/src/math/MathUtils";
 
 /**
  * Base
@@ -23,21 +24,24 @@ const scene = new THREE.Scene();
 const parameters = {};
 parameters.count = 100000;
 parameters.size = 0.01;
+parameters.branches = 3;
+parameters.spin = 1;
 
 // Each star will be positioned accordingly to that radius.
 // If the radius is 5, the stars will be positioned at a distance from 0 to 5
 parameters.radius = 5;
 
-//spin galaxies always seem to have 2 branches, but we can have more honestly 
+//spin galaxies always seem to have 2 branches, but we can have more honestly
 
 let geometry = null;
 let material = null;
 let points = null;
 
 //GEN GAL fn
-var generateGalaxy = () => {
-  //destroy the old galaxy
-
+const generateGalaxy = () => {
+  //destroy the old galaxy if there is one this helps with
+  // performance and not mkaing galaxies on top of each other
+  // when playing around with dat gui and the object parameters
   if (points !== null) {
     geometry.dispose();
     material.dispose();
@@ -57,10 +61,20 @@ var generateGalaxy = () => {
     const i3 = i * 3;
 
     const radius = Math.random() * parameters.radius;
+    // Then we can multiply the spinAngle by that spin parameter. To put it differently,
+    // the further the particle is from the center, the more spin it'll endure:
+    const spinAngle = radius * parameters.spin;
 
-    positions[i3] = radius; //x vertice Float32Array[0]
-    positions[i3 + 1] = 0; // y vertice Float32Array[1]
-    positions[i3 + 2] = 0; // x vertice Float32Array[2]
+    // Position particles on branches using Math.cos(...) and Math.sin(...).
+    // Calculate angle by taking modulo of index, dividing by branch count to get 0-1 range,
+    // then multiply by 2 * Math.PI for full circle. Use this angle for x and z axis,
+    // multiplied by radius.
+    const branchAngle =
+      ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+
+    positions[i3] = Math.cos(branchAngle + spinAngle) * radius;
+    positions[i3 + 1] = 0;
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius;
 
     // positions[i3] = (Math.random() - 0.5) * 3; //x vertice Float32Array[0]
     // positions[i3 + 1] = (Math.random() - 0.5) * 3; // y vertice Float32Array[1]
@@ -108,6 +122,19 @@ gui
   .step(0.01)
   .onFinishChange(generateGalaxy);
 
+gui
+  .add(parameters, "branches")
+  .min(2)
+  .max(20)
+  .step(1)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "spin")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
 // end params for Galaxy obj for lil gui
 
 generateGalaxy();
