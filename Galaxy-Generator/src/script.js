@@ -26,10 +26,17 @@ parameters.count = 100000;
 parameters.size = 0.01;
 parameters.branches = 3;
 parameters.spin = 1;
+// spread stars on the outside and more condensed star on the inside.
+parameters.randomness = 0.2;
+
+// Math.pow() to crush the value. The more power you apply, the closest to 0 it will get.
+// The problem is that you can't use a negative value with Math.pow().
+// What we will do is calculate the power then multiply it by -1 randomly.
+parameters.randomnessPower = 3;
 
 // Each star will be positioned accordingly to that radius.
 // If the radius is 5, the stars will be positioned at a distance from 0 to 5
-parameters.radius = 5;
+parameters.radius = 100;
 
 //spin galaxies always seem to have 2 branches, but we can have more honestly
 
@@ -72,9 +79,15 @@ const generateGalaxy = () => {
     const branchAngle =
       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    positions[i3] = Math.cos(branchAngle + spinAngle) * radius;
-    positions[i3 + 1] = 0;
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius;
+    // value for each axis with Math.random(), multiply it by the radius
+    // and then add those values to the positions:
+    const randomX = (Math.random() - 0.5) * parameters.randomness * radius;
+    const randomY = (Math.random() - 0.5) * parameters.randomness * radius;
+    const randomZ = (Math.random() - 0.5) * parameters.randomness * radius;
+
+    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+    positions[i3 + 1] = randomY;
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
     // positions[i3] = (Math.random() - 0.5) * 3; //x vertice Float32Array[0]
     // positions[i3 + 1] = (Math.random() - 0.5) * 3; // y vertice Float32Array[1]
@@ -136,6 +149,20 @@ gui
   .step(0.001)
   .onFinishChange(generateGalaxy);
 // end params for Galaxy obj for lil gui
+
+gui
+  .add(parameters, "randomness")
+  .min(0)
+  .max(2)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
+
+gui
+  .add(parameters, "randomnessPower")
+  .min(1)
+  .max(10)
+  .step(0.001)
+  .onFinishChange(generateGalaxy);
 
 generateGalaxy();
 
