@@ -28,15 +28,18 @@ parameters.branches = 3;
 parameters.spin = 1;
 // spread stars on the outside and more condensed star on the inside.
 parameters.randomness = 0.2;
-
-// Math.pow() to crush the value. The more power you apply, the closest to 0 it will get.
-// The problem is that you can't use a negative value with Math.pow().
-// What we will do is calculate the power then multiply it by -1 randomly.
 parameters.randomnessPower = 3;
 
 // Each star will be positioned accordingly to that radius.
 // If the radius is 5, the stars will be positioned at a distance from 0 to 5
-parameters.radius = 100;
+parameters.radius = 10;
+
+/**
+ * colors
+ */
+
+parameters.insideColor = "#ff6030";
+parameters.outsideColor = "#1b3984";
 
 //spin galaxies always seem to have 2 branches, but we can have more honestly
 
@@ -60,8 +63,16 @@ const generateGalaxy = () => {
    */
   geometry = new THREE.BufferGeometry();
 
+  // Inside the loop function, we want to mix these colors into a third color.
+  // That mix depends on the distance from the center of the galaxy. If the particle
+  // is at the center of the galaxy, it'll have the insideColor and the further it gets from the center,
+  // the more it will get mixed with the outsideColor.
+  const colorInside = new THREE.Color(parameters.insideColor);
+  const ColorOutside = new THREE.Color(parameters.outsideColor);
+
   //array to hold our vertices for our particle 'points' (rule of 3 vertices)
   const positions = new Float32Array(parameters.count * 3);
+  const colors = new Float32Array(parameters.count * 3);
 
   // in out loop we create our particles for our geometry
   for (let i = 0; i < parameters.count; i++) {
@@ -81,11 +92,44 @@ const generateGalaxy = () => {
 
     // value for each axis with Math.random(), multiply it by the radius
     // and then add those values to the positions:
-    const randomX = (Math.random() - 0.5) * parameters.randomness * radius;
-    const randomY = (Math.random() - 0.5) * parameters.randomness * radius;
-    const randomZ = (Math.random() - 0.5) * parameters.randomness * radius;
+    // Math.pow() to crush the value. The more power you apply, the closest to 0 it will get.
+    // The problem is that you can't use a negative value with Math.pow().
+    // What we will do is calculate the power then multiply it by -1 randomly.
+    const randomX =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
 
-    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+    const randomY =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+
+    const randomZ =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+
+    // mix these colors into a third color.  mix depends on the distance from the center of the galaxy.
+    // If the particle is at the center of the galaxy, it'll have the insideColor and the further it gets
+    // from the center, the more it will get mixed with the outsideColor.
+
+    // Clone colorInside and interpolate to another color using lerp(...).
+    // Lerp's first param is the target color, second param (0-1) controls the blend amount.
+    // Blend amount is based on radius divided by radius parameter.
+
+    const mixedColor = colorInside.clone();
+    mixedColor.lerp(ColorOutside, radius / parameters.radius);
+
+    // colors to each vertice
+    colors[i3] = mixedColor.r;
+    colors[i3 + 1] = mixedColor.g;
+    colors[i3 + 2] = mixedColor.b;
+
+    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX; //x vertice position
     positions[i3 + 1] = randomY;
     positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
@@ -95,7 +139,7 @@ const generateGalaxy = () => {
   }
   //add our mutated particles to our position attribute on our geometry
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   /**
    * Materials
    *
@@ -105,6 +149,7 @@ const generateGalaxy = () => {
     sizeAttenuation: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    vertexColors: true,
   });
 
   points = new THREE.Points(geometry, material);
@@ -163,6 +208,9 @@ gui
   .max(10)
   .step(0.001)
   .onFinishChange(generateGalaxy);
+
+gui.addColor(parameters, "insideColor").onFinishChange(generateGalaxy);
+gui.addColor(parameters, "outsideColor").onFinishChange(generateGalaxy);
 
 generateGalaxy();
 
@@ -223,6 +271,12 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  points !== null
+    ? (points.rotation.y = elapsedTime * 0.04)
+    : (points.rotation.y = 0);
+
+  // geometry.rotation.x = elapsedTime * 5;
 
   // Update controls
   controls.update();
