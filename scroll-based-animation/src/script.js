@@ -10,7 +10,11 @@ const parameters = {
   materialColor: "#ffeded",
 };
 
-gui.addColor(parameters, "materialColor");
+// listen to the change event on the already existing tweak and
+// update the material accordingly without this it doesn't work
+gui.addColor(parameters, "materialColor").onChange(() => {
+  material.color.set(parameters.materialColor);
+});
 
 /**
  * Base
@@ -22,13 +26,39 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
- * Test cube
+ * Lights
  */
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+
+const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+scene.add(directionalLight);
+
+//gradient texture
+
+const textureLoader = new THREE.TextureLoader();
+const gradientTexture = textureLoader.load("textures/gradients/3.jpg");
+
+/**
+ * material
+ * mesh toon only works with lighting else it looks black
+ */
+
+const material = new THREE.MeshToonMaterial({
+  color: parameters.materialColor,
+  gradientMap: gradientTexture,
+});
+
+/**
+ * Meshes
+ */
+const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
+
+const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
+
+const mesh3 = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
+  material
 );
-scene.add(cube);
+scene.add(mesh1, mesh2, mesh3);
 
 /**
  * Sizes
@@ -70,7 +100,7 @@ scene.add(camera);
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
-  alpha: true, // this turns off the elastic scroll default value is 0
+  alpha: true, // this makes our background of our page transparent
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
