@@ -7,7 +7,7 @@ import GUI from "lil-gui";
 const gui = new GUI();
 
 const parameters = {
-  materialColor: "#ffeded",
+  materialColor: "#c57282",
 };
 
 // listen to the change event on the already existing tweak and
@@ -36,6 +36,7 @@ scene.add(directionalLight);
 
 const textureLoader = new THREE.TextureLoader();
 const gradientTexture = textureLoader.load("textures/gradients/3.jpg");
+gradientTexture.magFilter = THREE.NearestFilter;
 
 /**
  * material
@@ -50,15 +51,70 @@ const material = new THREE.MeshToonMaterial({
 /**
  * Meshes
  */
+// Meshes
 const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
-
 const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
-
 const mesh3 = new THREE.Mesh(
   new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
   material
 );
+
 scene.add(mesh1, mesh2, mesh3);
+// By default, in Three.js, the field of view is vertical. This means that if you put one object on the top part
+// of the render and one object on the bottom part of the render and then you resize the window, you'll notice
+// that the objects stay put at the top and at the bottom.
+// mesh1.position.y = 2
+// mesh1.scale.set(0.5, 0.5, 0.5)
+
+// mesh2.visible = false
+
+// mesh3.position.y = - 2
+// mesh3.scale.set(0.5, 0.5, 0.5)
+
+// makes sure that each object is far enough away from the other on the y axis
+const objectDistance = 4; //for positoning our geometries
+// The values must be negative so that the objects go down:
+mesh1.position.y = -objectDistance * 0;
+mesh2.position.y = -objectDistance * 1;
+mesh3.position.y = -objectDistance * 2;
+
+mesh1.position.x = 2;
+mesh2.position.x = -2;
+mesh3.position.x = 2;
+
+scene.add(mesh1, mesh2, mesh3);
+
+const sectionMeshes = [mesh1, mesh2, mesh3];
+
+let scrollY = window.scrollY;
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY;
+
+  // console.log(scrollY)
+});
+
+/**
+ * Parallax
+ *
+ */
+
+/**
+ * Cursor
+ */
+
+const cursor = {};
+cursor.x = 0;
+cursor.y = 0;
+
+//mousemove
+// the camera will be able to go as much on the left as on the right
+//instead of a value going from 0 to 1 it's better to have a value going from -0.5 to 0.5.
+window.addEventListener("mousemove", (event) => {
+  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.y = event.clientY / sizes.height - 0.5;
+
+  console.log(cursor);
+});
 
 /**
  * Sizes
@@ -85,6 +141,12 @@ window.addEventListener("resize", () => {
 /**
  * Camera
  */
+
+//group
+
+const cameraGroup = new THREE.Group();
+scene.add(cameraGroup);
+
 // Base camera
 const camera = new THREE.PerspectiveCamera(
   35,
@@ -93,7 +155,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.z = 6;
-scene.add(camera);
+cameraGroup.add(camera)
 
 /**
  * Renderer
@@ -112,6 +174,22 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  camera.position.y = (-scrollY / sizes.height) * objectDistance;
+
+  // //animate our camera
+  const parallaxX = cursor.x;
+  // invert the y axis if positive then it feels kind of inverted and we want this to follow the cursor
+  const parallaxY = -cursor.y;
+  cameraGroup.position.x = parallaxX;
+  cameraGroup.position.y = parallaxY;
+
+  //permanent rotation
+
+  for (const mesh of sectionMeshes) {
+    mesh.rotation.x = elapsedTime * 0.1;
+    mesh.rotation.y = elapsedTime * 0.12;
+  }
 
   // Render
   renderer.render(scene, camera);
