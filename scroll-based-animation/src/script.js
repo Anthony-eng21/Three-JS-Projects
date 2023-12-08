@@ -108,7 +108,7 @@ cursor.y = 0;
 
 //mousemove
 // the camera will be able to go as much on the left as on the right
-// instead of a value going from 0 to 1 it's better to have a value going from -0.5 to 0.5.
+// instead of a value going from 0 to 1 it's better to have a value going from -0.5 to 0.5 for our view-port
 // for a more centered experience because 1 is basically left 0 (css for reference)
 window.addEventListener("mousemove", (event) => {
   cursor.x = event.clientX / sizes.width - 0.5;
@@ -156,7 +156,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.z = 6;
-cameraGroup.add(camera)
+cameraGroup.add(camera);
 
 /**
  * Renderer
@@ -182,8 +182,11 @@ const tick = () => {
   const parallaxX = cursor.x;
   // invert the y axis if positive then it feels kind of inverted and we want this to follow the cursor
   const parallaxY = -cursor.y;
-  cameraGroup.position.x = parallaxX;
-  cameraGroup.position.y = parallaxY;
+  // EASING
+  // On each frame, the camera will get a little closer to the destination. But, the closer it gets,
+  // the slower it moves because it's always a 10th of the actual position toward the target position.
+  cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 0.1;
+  cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 0.1;
 
   //permanent rotation
 
