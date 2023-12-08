@@ -108,12 +108,13 @@ cursor.y = 0;
 
 //mousemove
 // the camera will be able to go as much on the left as on the right
-//instead of a value going from 0 to 1 it's better to have a value going from -0.5 to 0.5.
+// instead of a value going from 0 to 1 it's better to have a value going from -0.5 to 0.5.
+// for a more centered experience because 1 is basically left 0 (css for reference)
 window.addEventListener("mousemove", (event) => {
   cursor.x = event.clientX / sizes.width - 0.5;
   cursor.y = event.clientY / sizes.height - 0.5;
 
-  console.log(cursor);
+  // console.log(cursor);
 });
 
 /**
