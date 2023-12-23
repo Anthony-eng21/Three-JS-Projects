@@ -172,21 +172,29 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  * Animate
  */
 const clock = new THREE.Clock();
+let previousTime = 0;
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
+
+  // console.log(deltaTime);
 
   camera.position.y = (-scrollY / sizes.height) * objectDistance;
 
   // //animate our camera
-  const parallaxX = cursor.x;
+  const parallaxX = cursor.x * 0.5;
   // invert the y axis if positive then it feels kind of inverted and we want this to follow the cursor
-  const parallaxY = -cursor.y;
+  const parallaxY = -cursor.y * 0.5;
   // EASING
+  // less clunky and more realistic for
   // On each frame, the camera will get a little closer to the destination. But, the closer it gets,
   // the slower it moves because it's always a 10th of the actual position toward the target position.
-  cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 0.1;
-  cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 0.1;
+  cameraGroup.position.x +=
+    (parallaxX - cameraGroup.position.x) * 5 * deltaTime;
+  cameraGroup.position.y +=
+    (parallaxY - cameraGroup.position.y) * 5 * deltaTime;
 
   //permanent rotation
 
