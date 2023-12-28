@@ -62,13 +62,32 @@ world.addContactMaterial(defaultContactMaterial);
  * applied force to our sphere's body
  */
 // sphereBody.applyLocalForce(
-//   new CANNON.Vec3(150, 0, 0),
-//   new CANNON.Vec3(0, 0, 0)
+//   new CANNON.Vec3(150, 0, 0), //impulse of the force added
+//   new CANNON.Vec3(0, 0, 0) // where it's added here will be the center of the body 0, 0, 0
 // );
 
 // world.addBody(sphereBody);
 
 world.defaultContactMaterial = defaultContactMaterial;
+
+/**
+ * Performace
+ * Broadphase Optimization in Collision Detection:
+ * The default 'NaiveBroadphase' checks every body against all others, which is inefficient.
+ * 'SAPBroadphase' (Sweep and Prune) is more efficient - it sorts bodies along an axis and checks only relevant pairs.
+ * This approach reduces the number of collision checks, improving performance, especially in scenes with many objects.
+ * Switching to SAPBroadphase can be done easily by setting it to the world.broadphase property.
+ * -----
+ * Sleep:
+ * Implementing 'Sleep' Feature for Efficiency:
+ * Bodies that are not moving (or moving very slowly) can be put to 'sleep' to improve performance.
+ * A sleeping body is not tested for collisions unless it's moved by code or hit by another body.
+ * This reduces the number of calculations, especially for static or temporarily inactive objects.
+ * Enable this feature by setting 'allowSleep' to true on the World object.
+ */
+
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.allowSleep = true;
 
 /** ----------------------
  * Floor CANNON OBJECT shape + body
@@ -131,6 +150,28 @@ const environmentMapTexture = cubeTextureLoader.load([
 ]);
 
 /**
+ * Collision Events
+ * Listening to Physics Events for Interaction Feedback:
+ * Bodies in the physics world can emit events like 'collide', 'sleep', and 'wakeup'.
+ * This feature is useful for triggering actions based on physics interactions (e.g., playing a sound on collision).
+ * Example use-case: Playing a sound when spheres and boxes collide with other objects.
+ * Note: In some browsers (like Chrome), sounds might not play until the user interacts with the page (like a click).
+ * This is a browser feature to prevent unwanted audio playback without user consent.
+ */
+
+const hitSound = new Audio("/sounds/hit.mp3");
+const playHitSound = (collision) => {
+  // 'getImpactVelocityAlongNormal(): Number': Retrieves the collision velocity along the normal; available due to 'collision' event listener on the box's body.
+  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
+  if (impactStrength > 1.5) {
+    // only play when the collision velocity is over 1.5
+    hitSound.volume = Math.random(); // for more realism
+    hitSound.currentTime = 0; // Fix for Sound Playback on Rapid Successive Collisions:
+    hitSound.play();
+  }
+};
+
+/**
  * Test sphere
 // const sphere = new THREE.Mesh(
   //   new THREE.SphereGeometry(0.5, 32, 32),
@@ -186,7 +227,6 @@ const createSphere = (radius, position) => {
   scene.add(mesh);
 
   // CANNON Physics object
-
   const shape = new CANNON.Sphere(radius);
   const body = new CANNON.Body({
     mass: 1,
@@ -196,6 +236,7 @@ const createSphere = (radius, position) => {
   });
 
   body.position.copy(position);
+  body.addEventListener("collide", playHitSound);
   world.addBody(body);
 
   objectsToUpdate.push({ mesh, body });
@@ -207,8 +248,7 @@ const createSphere = (radius, position) => {
 // initial call (removed because they render in the same spot as the box)
 // createSphere(0.5, { x: 0, y: 3, z: 0 });
 
-// ADDITION to LIL GUI
-
+// SPHERE ADDITION to LIL GUI
 const debugObject = {};
 debugObject.createSphere = () => {
   // createSphere(0.5, { x: 0, y: 3, z: 0 }); (isn't random and STACKS)
@@ -265,6 +305,10 @@ const createBox = (width, height, depth, position) => {
   body.position.copy(position);
   world.addBody(body);
 
+  // Event Listener
+  // super handy that we have this event listener honestly
+  body.addEventListener("collide", playHitSound);
+
   // Save in objects
   objectsToUpdate.push({ mesh, body });
 };
@@ -279,7 +323,32 @@ debugObject.createBox = () => {
   });
 };
 
+// BOX ADDITION TO LIL GUI
 gui.add(debugObject, "createBox");
+
+/**
+ * REMOVE THINGS
+ * loop on every object inside our objectsToUpdate array.
+ * Then remove both the object.body from the world and the
+ * object.mesh from the scene. Also, don't forget to remove the
+ * eventListener like you would have done in native JavaScript:
+ */
+
+debugObject.reset = () => {
+  for (const object of objectsToUpdate) {
+    //remove callback
+    object.body.removeEventListener("collide", playHitSound);
+    //remove body from cannon
+    world.removeBody(object.body);
+
+    //remove mesh
+    scene.remove(object.mesh);
+  }
+
+  objectsToUpdate.splice(0, objectsToUpdate.length);
+};
+
+gui.add(debugObject, "reset");
 
 /**
  * Floor
@@ -376,11 +445,10 @@ const tick = () => {
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
-  //Update Physics world
-
+  //UPDATE PHYSICS WORLD
   // sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position);
   /**
-   * step @params
+   * World.world.step() @params
    * delay,
    * dt,
    * iterations
@@ -391,16 +459,25 @@ const tick = () => {
   // We can now loop on that array then copy each body.position to the mesh.position:
   // update the positions of the Three.js meshes based on the physics simulation:
   for (const object of objectsToUpdate) {
-    object.mesh.position.copy(object.body.position); // Sync position
-    
+    /**
+     * SYNC POSITION
+     * Update loop: Ensures the position of Three.js Meshes aligns with Cannon.js Bodies.
+     * This syncing is crucial because while Cannon.js calculates the physical movement
+     * and position of objects (due to gravity, collisions, etc.), these changes must be
+     * reflected visually on the screen by the corresponding Three.js Meshes.
+     * By copying the position of each Cannon.js Body to its respective Three.js Mesh,
+     * we achieve a consistent and accurate representation of the object's location in the scene.
+     */
+    object.mesh.position.copy(object.body.position); // Sync position of mesh to the postion of our cannon obj
+
     /**
      * SYNC ROTATION
-     * Update loop: Synchronizes Three.js Meshes with Cannon.js Bodies 
-     * Fixes issue where boxes appeared to go through the floor due to lack of rotation in Meshes. 
-     * Now, both position and rotation (quaternion) of the Bodies are copied to the Meshes, 
+     * Update loop: Synchronizes Three.js Meshes with Cannon.js Bodies
+     * Fixes issue where boxes appeared to go through the floor due to lack of rotation in Meshes.
+     * Now, both position and rotation (quaternion) of the Bodies are copied to the Meshes,
      * ensuring visual and physical consistency, especially noticeable with non-spherical objects.
      */
-    object.mesh.quaternion.copy(object.body.quaternion); // Sync rotation
+    object.mesh.quaternion.copy(object.body.quaternion); // Sync rotation of mesh to the rotation (quaternion) of our cannon obj
   }
 
   //update our three.js sphere's vectors by using our physics body object
