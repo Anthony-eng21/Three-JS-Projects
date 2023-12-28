@@ -146,24 +146,46 @@ const environmentMapTexture = cubeTextureLoader.load([
     // scene.add(sphere);
     */
 
-// convention to Automate with functions like this so we can just call this over and over again
+// Convention to Automate with functions like this so we can just call this over and over again
+/**
+ * Cannon.js Body position to apply it to the Three.js Mesh position.
+ * create an array of all objects that need to be updated.
+ * Then we'll add the newly created Mesh
+ * and Body inside an object to that array:
+ */
+// array to populate with objects containing the positions
+const objectsToUpdate = []; // type: js array of js objects lel
+
+/**
+ * Optimize
+ * ------------------ Short Explanation ------------------
+ * The optimization involves creating a single instance
+ * of THREE.SphereGeometry and THREE.MeshStandardMaterial
+ * and reusing them for every sphere:
+ * ------------------ Long Explanation -------------------
+ * the geometry and the material of the Three.js Mesh are the same,
+ * we should get them out of the createSphere function. The problem is
+ * that we are using the radius to create our geometry. An easy
+ * solution would be to fix the radius of
+ * the SphereGeometry to 1 and then scale the Mesh:
+ */
+const sphereGeometry = new THREE.SphereGeometry(1, 20, 20);
+const sphereMaterial = new THREE.MeshStandardMaterial({
+  metalness: 0.3,
+  roughness: 0.4,
+  envMap: environmentMapTexture,
+  envMapIntensity: 0.5,
+});
+
 const createSphere = (radius, position) => {
   //THREE MESH
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 20, 20),
-    new THREE.MeshStandardMaterial({
-      metalness: 0.3,
-      roughness: 0.4,
-      envMap: environmentMapTexture,
-      envMapIntensity: 0.5,
-    })
-  );
-
+  const mesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
   mesh.castShadow = true;
+  mesh.scale.set(radius, radius, radius);
   mesh.position.copy(position);
   scene.add(mesh);
 
-  // CANNON body object
+  // CANNON Physics object
 
   const shape = new CANNON.Sphere(radius);
   const body = new CANNON.Body({
@@ -175,9 +197,89 @@ const createSphere = (radius, position) => {
 
   body.position.copy(position);
   world.addBody(body);
+
+  objectsToUpdate.push({ mesh, body });
+  // We can now loop on that array inside the tick() function
+  // (right after updating the world) and copy each
+  // body.position to the mesh.position: (see tick function)
 };
 
-createSphere(0.5, { x: 0, y: 3, z: 0 });
+// initial call (removed because they render in the same spot as the box)
+// createSphere(0.5, { x: 0, y: 3, z: 0 });
+
+// ADDITION to LIL GUI
+
+const debugObject = {};
+debugObject.createSphere = () => {
+  // createSphere(0.5, { x: 0, y: 3, z: 0 }); (isn't random and STACKS)
+  //random radius and postioning
+  createSphere(Math.random() * 0.5, {
+    x: (Math.random() - 0.5) * 3,
+    y: 3,
+    z: (Math.random() - 0.5) * 3,
+  });
+};
+
+gui.add(debugObject, "createSphere");
+
+/**
+ * Boxes
+ * To create a box, we must use a BoxGeometry and a
+ * Box shape. Be careful; the
+ * parameters aren't the same. A BoxGeometry
+ * needs a width, a height, and a depth.
+ * In the meantime, a Box shape needs a
+ * halfExtents. It is represented by a Vec3
+ * corresponding to a segment that starts at the
+ * center of the box and joining one of that box's corners:
+ */
+
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+const boxMaterial = new THREE.MeshStandardMaterial({
+  metalness: 0.3,
+  roughness: 0.4,
+  envMap: environmentMapTexture,
+  envMapIntensity: 0.5,
+});
+
+const createBox = (width, height, depth, position) => {
+  // THREE.JS OBJECT
+  const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+  mesh.scale.set(width, height, depth);
+  mesh.castShadow = true;
+  mesh.position.copy(position);
+  scene.add(mesh);
+
+  //CANNON.JS OBJECT
+  //shape
+  const shape = new CANNON.Box(
+    new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5)
+  );
+
+  const body = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(0, 3, 0),
+    shape,
+    material: defaultMaterial,
+  });
+  body.position.copy(position);
+  world.addBody(body);
+
+  // Save in objects
+  objectsToUpdate.push({ mesh, body });
+};
+
+createBox(1, 1.5, 2, { x: 0, y: 3, z: 0 });
+
+debugObject.createBox = () => {
+  createBox(Math.random(), Math.random(), Math.random(), {
+    x: (Math.random() - 0.5) * 3,
+    y: 3,
+    z: (Math.random() - 0.5) * 3,
+  });
+};
+
+gui.add(debugObject, "createBox");
 
 /**
  * Floor
@@ -285,6 +387,21 @@ const tick = () => {
    */
   world.step(1 / 60, deltaTime, 3);
   // console.log(sphereBody.position.y);
+
+  // We can now loop on that array then copy each body.position to the mesh.position:
+  // update the positions of the Three.js meshes based on the physics simulation:
+  for (const object of objectsToUpdate) {
+    object.mesh.position.copy(object.body.position); // Sync position
+    
+    /**
+     * SYNC ROTATION
+     * Update loop: Synchronizes Three.js Meshes with Cannon.js Bodies 
+     * Fixes issue where boxes appeared to go through the floor due to lack of rotation in Meshes. 
+     * Now, both position and rotation (quaternion) of the Bodies are copied to the Meshes, 
+     * ensuring visual and physical consistency, especially noticeable with non-spherical objects.
+     */
+    object.mesh.quaternion.copy(object.body.quaternion); // Sync rotation
+  }
 
   //update our three.js sphere's vectors by using our physics body object
   // sphere.position.copy(sphereBody.position);
