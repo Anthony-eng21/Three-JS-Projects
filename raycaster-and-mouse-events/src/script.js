@@ -116,6 +116,41 @@ window.addEventListener("resize", () => {
 });
 
 /**
+ * - Hovering
+ * First, let's handle hovering.
+ * To begin with, we need the coordinates of the mouse. We cannot use the basic native JavaScript coordinates,
+ * which are in pixels. We need a value that goes from -1 to +1 in both the horizontal and the vertical axis,
+ * with the vertical coordinate being positive when moving the mouse upward. (WebGL Normalized Device Coordinates (NDC))
+ * This is how WebGL works and it's related to things like clip space but we don't need to understand those complex concepts.
+ * - Examples:
+ * The mouse is on the top left of the page: -1 / 1
+ * The mouse is on the bottom left of the page: -1 / - 1
+ * The mouse is on the middle vertically and at right horizontally: 1 / 0
+ * The mouse is in the center of the page: 0 / 0
+ */
+
+// save the current intersecting object (mouseenter & mouseleave)
+//  Now that we have a variable containing the currently hovered object, 
+let currentIntersect = null;
+
+// First, let's create a mouse variable with a Vector2, and update that variable when the mouse is moving:
+const mouse = new THREE.Vector2();
+
+window.addEventListener("mousemove", (e) => {
+  // NDC (Normalized Device Coordinates)
+  mouse.x = (e.clientX / sizes.width) * 2 - 1;
+  mouse.y = -(e.clientY / sizes.width) * 2 + 1;
+
+  // console.log(mouse);
+});
+
+window.addEventListener("click", () => {
+  if(currentIntersect) {
+    console.log('clicked')
+  }
+})
+
+/**
  * Camera
  */
 // Base camera
@@ -151,7 +186,7 @@ const tick = () => {
 
   //Animate Objects
 
-  //better wave
+  //Better Wave Animation than what was provided
   const waveSpeed = 1; // Speed of the wave
   const waveAmplitude = 1.5; // Height of the wave
   const waveFrequency = 1; // Frequency of the wave
@@ -159,48 +194,107 @@ const tick = () => {
 
   object1.position.y =
     Math.sin(elapsedTime * waveFrequency) * waveAmplitude * waveSpeed;
+
   object2.position.y =
     Math.sin(elapsedTime * waveFrequency - phaseOffset) *
     waveAmplitude *
     waveSpeed;
+
   object3.position.y =
     Math.sin(elapsedTime * waveFrequency - 2 * phaseOffset) *
     waveAmplitude *
     waveSpeed;
 
-  // OLD WAVE
-  //   object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5
-  //   object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5
-  //   object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5
+  /** MOUSEMOVE
+   * RayCasting on MouseMove
+   * Raycasting on 'mousemove' may exceed frame rate; it's handled in 'tick' for consistency.
+   * 'setFromCamera()' orients the ray properly. Intersections change object colors accordingly.
+   * Updates the ray with a new origin and direction.
+   * setFromCamera() ARGS:
+   * @param coords — 2D coordinates of the mouse, in normalized device coordinates (NDC)---X and Y components should be between -1 and 1.
+   * @param camera — camera from which the ray should originate
+  
+  // raycaster.setFromCamera(mouse, camera)
 
-  /**
-   * UPDATE RAYCASTER
-   * update our raycaster like we did before but in the tick function:
+  // const objectsToTest = [object1, object2, object3]
+  // const intersects = raycaster.intersectObjects(objectsToTest)
+
+  // for(const intersect of intersects)
+  // {
+  //     intersect.object.material.color.set('#0000ff')
+  // }
+
+  // for(const object of objectsToTest)
+  // {
+  //     if(!intersects.find(intersect => intersect.object === object))
+  //     {
+  //         object.material.color.set('#ff0000')
+  //     }
+  // }
+    
+    */
+
+  /** MOUSEENTER and MOUSELEAVE
+   * To emulate 'mouseenter' and 'mouseleave', track the current object under the mouse. (currentIntersect)
+   * Detect 'mouseenter' when an object is newly intersected, and 'mouseleave' when there are no intersections.
    */
 
-  const rayOrigin = new THREE.Vector3(-3, 0, 0); // to the left of the first ball
-  const rayDirection = new THREE.Vector3(1, 0, 0); // shoots to the right
-  rayDirection.normalize(); //already normalixed direction with 1 but this is a nice convention
+  raycaster.setFromCamera(mouse, camera);
 
-  raycaster.set(rayOrigin, rayDirection);
-
-  // put the array of objects to test in a variable objectsToTest. This will be handy later.
   const objectsToTest = [object1, object2, object3];
   const intersects = raycaster.intersectObjects(objectsToTest);
 
-  console.log(intersects);
-
-  // intersecting update of the color to our objects in our arr
-  for (const object of objectsToTest) {
-    object.material.color.set("#cc99ff");
+  if (intersects.length) 
+  {
+    if (!currentIntersect) 
+    {
+      // console.log("mouse enter");
+    }
+    currentIntersect = intersects[0];
+  } 
+  else 
+  {
+    if (currentIntersect) 
+    {
+      // console.log("mouse leave");
+    }
+    currentIntersect = null;
   }
 
-  //intersecting update of the color to our objects in our arr
-  for (const intersect of intersects) {
-    intersect.object.material.color.set("#0000ff");
-  }
+  /** OLD WAVE
+   * 
+  OLD WAVE
+  object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5
+  object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5
+  object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5
+  * */
+
+  // UPDATE RAYCASTER (WAVE ANIMATION)
+  // const rayOrigin = new THREE.Vector3(-3, 0, 0); // to the left of the first ball
+  // const rayDirection = new THREE.Vector3(1, 0, 0); // shoots to the right
+  // rayDirection.normalize(); //already normalixed direction with 1 but this is a nice convention
+
+  // raycaster.set(rayOrigin, rayDirection);
+
+  // // put the array of objects to test in a variable objectsToTest. This will be handy later.
+  // const objectsToTest = [object1, object2, object3];
+  // // Raycaster.prototype.intersectObjects(): Checks all intersection between the ray and the objects with or without the descendants
+  // const intersects = raycaster.intersectObjects(objectsToTest);
+
+  // console.log(intersects);
+
+  // // initial update of the color to our objects in our arr for our fps
+  // for (const object of objectsToTest) {
+  //   object.material.color.set("#cc99ff");
+  // }
+
+  // //intersecting update frames of the color to our objects in our arr
+  // for (const intersect of intersects) {
+  //   intersect.object.material.color.set("#0000ff");
+  // }
 
   // Update controls
+
   controls.update();
 
   // Render
