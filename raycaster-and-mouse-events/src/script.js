@@ -18,15 +18,29 @@ const scene = new THREE.Scene();
 
 /**
  * Model
- * GLTFLoader.proto.load 
+ * GLTFLoader.proto.load
  * @params file
  * @params cb function
  */
 
+/**
+ * Lights for our model
+ */
+
+const ambientLight = new THREE.AmbientLight("#ffffff", 0.9);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight("#ffffff", 2.1);
+directionalLight.position.set(1, 2, 3);
+scene.add(directionalLight);
+
 const gltfLoader = new GLTFLoader();
 
-gltfLoader.load("./models/Duck/glTF-Binary/Duck.glb", () => {
-  console.log("loaded");
+//our ducks material is a MeshStandardMaterial and can only be with light so
+// we need to add lights to our scene so we can see it.
+gltfLoader.load("./models/Duck/glTF-Binary/Duck.glb", (gltf) => {
+  gltf.scene.position.y = -1.2
+  scene.add(gltf.scene);
 });
 
 /**
@@ -271,12 +285,12 @@ const tick = () => {
 
   if (intersects.length) {
     if (!currentIntersect) {
-      console.log("mouse enter");
+      // console.log("mouse enter");
     }
     currentIntersect = intersects[0];
   } else {
     if (currentIntersect) {
-      console.log("mouse leave");
+      // console.log("mouse leave");
     }
     currentIntersect = null;
   }
