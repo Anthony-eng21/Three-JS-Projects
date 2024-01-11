@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
 /**
  * Base
  */
@@ -13,6 +15,19 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+
+/**
+ * Model
+ * GLTFLoader.proto.load 
+ * @params file
+ * @params cb function
+ */
+
+const gltfLoader = new GLTFLoader();
+
+gltfLoader.load("./models/Duck/glTF-Binary/Duck.glb", () => {
+  console.log("loaded");
+});
 
 /**
  * Objects
@@ -130,7 +145,7 @@ window.addEventListener("resize", () => {
  */
 
 // save the current intersecting object (mouseenter & mouseleave)
-//  Now that we have a variable containing the currently hovered object, 
+//  Now that we have a variable containing the currently hovered object,
 let currentIntersect = null;
 
 // First, let's create a mouse variable with a Vector2, and update that variable when the mouse is moving:
@@ -145,10 +160,20 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("click", () => {
-  if(currentIntersect) {
-    console.log('clicked')
+  if (currentIntersect) {
+    switch (currentIntersect.object) {
+      case object1:
+        console.log("click on object1");
+        break;
+      case object2:
+        console.log("click on object2");
+        break;
+      case object3:
+        console.log("click on object3");
+        break;
+    }
   }
-})
+});
 
 /**
  * Camera
@@ -244,19 +269,14 @@ const tick = () => {
   const objectsToTest = [object1, object2, object3];
   const intersects = raycaster.intersectObjects(objectsToTest);
 
-  if (intersects.length) 
-  {
-    if (!currentIntersect) 
-    {
-      // console.log("mouse enter");
+  if (intersects.length) {
+    if (!currentIntersect) {
+      console.log("mouse enter");
     }
     currentIntersect = intersects[0];
-  } 
-  else 
-  {
-    if (currentIntersect) 
-    {
-      // console.log("mouse leave");
+  } else {
+    if (currentIntersect) {
+      console.log("mouse leave");
     }
     currentIntersect = null;
   }
