@@ -7,7 +7,7 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 const gltfLoader = new GLTFLoader();
 
 const dracoLoader = new DRACOLoader();
-// yesssss
+
 /** Draco Loading 
  * You can still load not compressed glTF file 
  * with the GLTFLoader and the Draco decoder
